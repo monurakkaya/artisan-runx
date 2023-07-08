@@ -14,8 +14,8 @@ class ArtisanRunXCommand extends Command
 
     private array $summary = [
         'succeeded' => 0,
+        'not_found' => 0,
         'failed' => 0,
-        'not_found' => 0
     ];
 
     public function handle()
