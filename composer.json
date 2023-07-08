@@ -23,7 +23,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Monurakkaya\\ArtisanRunx\\Providers\\RunxServiceProvider"
+                "Monurakkaya\\ArtisanRunx\\Providers\\ServiceProvider"
             ]
         }
     },
