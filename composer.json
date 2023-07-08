@@ -1,0 +1,35 @@
+{
+    "name": "monurakkaya/artisan-runx",
+    "description": "Run multiple Artisan commands with a single command",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Monurakkaya\\ArtisanRunx\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Monurakkaya\\ArtisanRunx\\Tests\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Mehmet Onur AKKAYA",
+            "email": "monurakkaya@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Monurakkaya\\ArtisanRunx\\Providers\\RunxServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
