@@ -4,7 +4,7 @@ namespace Monurakkaya\ArtisanRunx\Commands;
 
 use Exception;
 use Illuminate\Console\Command;
-use Symfony\Component\Console\Exception\CommandNotFoundException;
+use Illuminate\Support\Facades\Process;
 
 class ArtisanRunXCommand extends Command
 {
@@ -14,7 +14,6 @@ class ArtisanRunXCommand extends Command
 
     private array $summary = [
         'succeeded' => 0,
-        'not_found' => 0,
         'failed' => 0,
     ];
 
@@ -25,13 +24,23 @@ class ArtisanRunXCommand extends Command
         $commands = explode('&&', $command);
 
         foreach ($commands as $command) {
+
             $this->info("Running command: $command");
             try {
-                $this->call(trim($command));
-                $this->countSucceeded();
-            } catch (CommandNotFoundException $exception) {
-                $this->error($exception->getMessage());
-                $this->countNotFound();
+                $re = '/(\\\\+)[a-zA-Z0-9]*/m';
+                preg_match_all($re, $command, $matches, PREG_SET_ORDER, 0);
+
+                foreach ($matches as $match) {
+                    $command = str_replace($match[1], '\\\\\\', $command);
+                }
+
+                $result = Process::run("php artisan ${command}", function (string $type, string $output) {
+                    $this->info($output);
+                });
+
+                $result->successful()
+                    ? $this->countSucceeded()
+                    : $this->countFailed();
             } catch (Exception $exception) {
                 $this->error($exception->getMessage());
                 $this->countFailed();
@@ -51,12 +60,6 @@ class ArtisanRunXCommand extends Command
         $this->summary['succeeded']++;
     }
 
-    private function countNotFound()
-    {
-        $this->summary['not_found']++;
-        $this->countFailed();
-    }
-
     private function countFailed()
     {
         $this->summary['failed']++;
@@ -71,10 +74,9 @@ class ArtisanRunXCommand extends Command
     {
         $this->info('Artisan RunX Summary:');
         $this->table(
-            ['Success', 'Not Found', 'Failed'],
+            ['Success', 'Failed'],
             [array_values($this->summary)],
             'box-double'
         );
     }
-
 }
