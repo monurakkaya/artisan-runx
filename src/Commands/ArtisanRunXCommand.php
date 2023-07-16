@@ -4,6 +4,7 @@ namespace Monurakkaya\ArtisanRunx\Commands;
 
 use Exception;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Process;
 
 class ArtisanRunXCommand extends Command
@@ -25,22 +26,26 @@ class ArtisanRunXCommand extends Command
 
         foreach ($commands as $command) {
 
+            $command = trim($command);
             $this->info("Running command: $command");
             try {
-                $re = '/(\\\\+)[a-zA-Z0-9]*/m';
-                preg_match_all($re, $command, $matches, PREG_SET_ORDER, 0);
+                preg_match_all('/(\\\\+)[a-zA-Z0-9]*/m', $command, $matches, PREG_SET_ORDER, 0);
 
                 foreach ($matches as $match) {
                     $command = str_replace($match[1], '\\\\\\', $command);
                 }
 
-                $result = Process::run("php artisan ${command}", function (string $type, string $output) {
-                    $this->info($output);
-                });
+                if (app()->runningUnitTests()) {
+                    $this->runTestCase($command);
+                } else {
+                    $result = Process::run("php artisan ${command}", function (string $type, string $output) {
+                        $this->info($output);
+                    });
+                    $result->successful()
+                        ? $this->countSucceeded()
+                        : $this->countFailed();
+                }
 
-                $result->successful()
-                    ? $this->countSucceeded()
-                    : $this->countFailed();
             } catch (Exception $exception) {
                 $this->error($exception->getMessage());
                 $this->countFailed();
@@ -78,5 +83,28 @@ class ArtisanRunXCommand extends Command
             [array_values($this->summary)],
             'box-double'
         );
+    }
+
+    private function runTestCase($command)
+    {
+        switch ($command) {
+            case 'not_defined_command':
+            case 'inspire':
+                $result = Artisan::call($command);
+                break;
+            default:
+                $raw = explode(' ', $command);
+                $result = Artisan::call($raw[0], [
+                    'action' => $raw[1],
+                    '--id' => str_replace('--id=', '', $raw[2] ?? null),
+                ]);
+                break;
+        }
+
+        if ($result === Command::SUCCESS) {
+            $this->countSucceeded();
+        } else {
+            $this->countFailed();
+        }
     }
 }
